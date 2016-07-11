@@ -86,8 +86,11 @@ boolean apertou;
 int toqueAcerto[] = {NOTE_E6, NOTE_G6, NOTE_A6, NOTE_A6, NOTE_A6, NOTE_B6};
 int toqueAcertoTempo[] = {12, 12, 6, 6, 12, 3};
 
-int toqueErro[] = {NOTE_B3, NOTE_A3, NOTE_A3, NOTE_A3, NOTE_G3, NOTE_E3};
-int toqueErroTempo[] = {6, 6, 12, 12, 6, 3};
+//int toqueErro[] = {NOTE_B3, NOTE_A3, NOTE_A3, NOTE_A3, NOTE_G3, NOTE_E3};
+//int toqueErroTempo[] = {6, 6, 12, 12, 6, 3};
+
+int toqueErro[] = {NOTE_B3};
+int toqueErroTempo[] = {2};
 
 void setup() {
   Serial.begin(9600);
@@ -227,5 +230,5 @@ void etapaAcerto()
 
 void etapaErro()
 {
-  chamaToque(toqueErro, toqueErroTempo, 6, 0b00110011);
+  chamaToque(toqueErro, toqueErroTempo, 1, 0b00110011);
 }
