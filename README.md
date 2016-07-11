@@ -14,6 +14,6 @@ Projeto de Arduino para jogo infantil para ajudar no aprendizado dos números
 * 1 Buzzer;
 * Jumpers;
 
-## Esquema
+## Esquema:
 
 ![Esquema](http://spoh.com.br/imagens/conta_conta_bb.png)
