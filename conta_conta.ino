@@ -1,13 +1,11 @@
 //**************************************************************
 //  Nome       : Conta Conta
 //  Autor      : Sergio Porto de Oliveira Hess
-//  Data       : 09/07/2016
+//  Data       : 23/07/2016
 //  Modificado : --
 //  Version    : 1.0
 //  Notes      : Jogo para ajudar no aprendizado dos números
 //**************************************************************
-
-
 
 #define NOTE_C3  131
 #define NOTE_CS3 139
@@ -57,42 +55,70 @@
 #define NOTE_A6  1760
 #define NOTE_AS6 1865
 #define NOTE_B6  1976
+#define NOTE_C7  2093
+#define NOTE_CS7 2217
+#define NOTE_D7  2349
+#define NOTE_DS7 2489
+#define NOTE_E7  2637
+#define NOTE_F7  2794
+#define NOTE_FS7 2960
+#define NOTE_G7  3136
+#define NOTE_GS7 3322
+#define NOTE_A7  3520
+#define NOTE_AS7 3729
+#define NOTE_B7  3951
 
 const int latchPinDig = 11;
 const int dataPinDig = 12;
 const int clockPinDig = 13;
-const int digito = 2;
 
-const int latchPinLed = 8;
-const int dataPinLed = 9;
-const int clockPinLed = 10;
+const int botaoContador = 2;
+const int ledContador = 3;
 
-const int botaoCheck = 3;
-const int botaoContador = 4;
-const int ledContador = 5;
+const int botaoCheck = 4;
 
-const int buzz = 14;
+const int ledErro = 5;
+const int ledSucesso = 6;
 
-const int numeros[] = {126, 12, 182, 158, 204, 218, 250, 14, 254, 222};
-const byte anima[] = {0b10000001, 0b01000010, 0b00100100, 0b00011000, 0b00100100, 0b01000010, 0b10000001};
+const int buzz = 7;
 
-const byte ledVermelho = 0b00110011;
-const byte ledVerde = 0b11001100;
+const byte numeros[11] = {
+  0b01111111, // 0
+  0b00001101, // 1
+  0b10110111, // 2
+  0b10011111, // 3
+  0b11001101, // 4
+  0b11011011, // 5
+  0b11111011, // 6
+  0b00001111, // 7
+  0b11111111, // 8
+  0b11011111, // 9
+  0b00000000  // desligado
+};
+
+
+const byte animaDigito[7] = {
+  0b00000000, // desligado
+  0b00000011,
+  0b00000100,
+  0b00001001,
+  0b00010000,
+  0b00100001,
+  0b01000000
+};
+
+int toqueAcerto[] = {NOTE_E7, NOTE_G7, NOTE_A7, NOTE_A7, NOTE_A7, NOTE_B7};
+int toqueAcertoTempo[] = {12, 12, 6, 6, 12, 3};
+
+int toqueErro[] = {NOTE_B3};
+int toqueErroTempo[] = {2};
 
 int pushJogador;
 int numeroAtual;
 boolean apertou;
 
-int toqueAcerto[] = {NOTE_E6, NOTE_G6, NOTE_A6, NOTE_A6, NOTE_A6, NOTE_B6};
-int toqueAcertoTempo[] = {12, 12, 6, 6, 12, 3};
-
-//int toqueErro[] = {NOTE_B3, NOTE_A3, NOTE_A3, NOTE_A3, NOTE_G3, NOTE_E3};
-//int toqueErroTempo[] = {6, 6, 12, 12, 6, 3};
-
-int toqueErro[] = {NOTE_B3};
-int toqueErroTempo[] = {2};
-
 void setup() {
+
   Serial.begin(9600);
 
   randomSeed(analogRead(A5));
@@ -100,34 +126,41 @@ void setup() {
   pinMode(latchPinDig, OUTPUT);
   pinMode(clockPinDig, OUTPUT);
   pinMode(dataPinDig, OUTPUT);
-  pinMode(digito, OUTPUT);
 
-  pinMode(latchPinLed, OUTPUT);
-  pinMode(clockPinLed, OUTPUT);
-  pinMode(dataPinLed, OUTPUT);
+  sendDig595(numeros[10]);
 
-  pinMode(botaoCheck, INPUT_PULLUP);
   pinMode(botaoContador, INPUT_PULLUP);
   pinMode(ledContador, OUTPUT);
 
+  pinMode(botaoCheck, INPUT_PULLUP);
+
+  pinMode(ledErro, OUTPUT);
+  pinMode(ledSucesso, OUTPUT);
+
   pinMode(buzz, OUTPUT);
 
-  sendDig595(0);
+  animaInicio();
 
-  rodaAnima();
 }
 
 void loop() {
+
   pushJogador = 0;
   numeroAtual = random(0, 10);
+
+  rodaAnimaDigito();
 
   while (!leCheck()) {
     sendDig595(numeros[numeroAtual]);
     apertou = leContador();
     while ( apertou ) {
+      delay(250);
       if (!leContador()) {
         apertou = false;
         pushJogador++;
+        Serial.print("numeroAtual = ");
+        Serial.print(numeroAtual);
+        Serial.print(" | pushJogador = ");
         Serial.println(pushJogador);
       }
     }
@@ -138,40 +171,20 @@ void loop() {
   } else {
     etapaErro();
   }
+
 }
 
-void sendDig595(int valor)
+void sendDig595(byte valor)
 {
-  digitalWrite(digito, LOW);
   digitalWrite(latchPinDig, LOW);
   shiftOut(dataPinDig, clockPinDig, MSBFIRST, valor);
   digitalWrite(latchPinDig, HIGH);
 }
 
-void sendLed595(int valor)
-{
-  digitalWrite(digito, LOW);
-  digitalWrite(latchPinLed, LOW);
-  shiftOut(dataPinLed, clockPinLed, LSBFIRST, valor);
-  digitalWrite(latchPinLed, HIGH);
-}
-
-void rodaAnima()
-{
-  for (int j = 0; j < 3; j++) {
-    for (int i = 0; i < 8; i++) {
-      sendLed595(anima[i]);
-      delay(100);
-    }
-  }
-  sendLed595(0);
-}
-
 boolean leContador()
 {
   int leitura = digitalRead(botaoContador);
-  Serial.println(leitura);
-  if ( leitura == 1 ) {
+  if ( leitura == 0 ) {
     digitalWrite(ledContador, LOW);
     return false;
   } else {
@@ -190,7 +203,48 @@ boolean leCheck()
   }
 }
 
-void chamaToque(int toque[], int toqueTempo[], int tamanho, byte led)
+void animaInicio()
+{
+  digitalWrite(ledContador, HIGH);
+  digitalWrite(ledErro, HIGH);
+  digitalWrite(ledSucesso, HIGH);
+  delay(300);
+  digitalWrite(ledContador, LOW);
+  digitalWrite(ledErro, LOW);
+  digitalWrite(ledSucesso, LOW);
+  delay(200);
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(ledContador, HIGH);
+    digitalWrite(ledErro, LOW);
+    digitalWrite(ledSucesso, LOW);
+    delay(300);
+    digitalWrite(ledContador, LOW);
+    digitalWrite(ledErro, HIGH);
+    digitalWrite(ledSucesso, LOW);
+    delay(300);
+    digitalWrite(ledContador, LOW);
+    digitalWrite(ledErro, LOW);
+    digitalWrite(ledSucesso, HIGH);
+    delay(300);
+  }
+  digitalWrite(ledContador, HIGH);
+  digitalWrite(ledErro, HIGH);
+  digitalWrite(ledSucesso, HIGH);
+  delay(300);
+  digitalWrite(ledContador, LOW);
+  digitalWrite(ledErro, LOW);
+  digitalWrite(ledSucesso, LOW);
+}
+
+void rodaAnimaDigito()
+{
+  for(int i = 0; i < 7; i++){
+    sendDig595(animaDigito[i]);
+    delay(250);
+  }
+}
+
+void chamaToque(int toque[], int toqueTempo[], int tamanho, int led)
 {
   for (int nota = 0; nota < tamanho; nota++) {
 
@@ -205,7 +259,7 @@ void chamaToque(int toque[], int toqueTempo[], int tamanho, byte led)
   }
 }
 
-void toca(int pino, long frequency, long length, byte led)
+void toca(int pino, long frequency, long length, int led)
 {
 
   long delayValue = 1000000 / frequency / 2;
@@ -213,10 +267,10 @@ void toca(int pino, long frequency, long length, byte led)
 
   for (long i = 0; i < numCycles; i++) {
     digitalWrite(pino, HIGH);
-    sendLed595(led);
+    digitalWrite(led, HIGH);
     delayMicroseconds(delayValue);
     digitalWrite(pino, LOW);
-    sendLed595(0);
+    digitalWrite(led, LOW);
     delayMicroseconds(delayValue);
   }
   digitalWrite(13, LOW);
@@ -225,10 +279,11 @@ void toca(int pino, long frequency, long length, byte led)
 
 void etapaAcerto()
 {
-  chamaToque(toqueAcerto, toqueAcertoTempo, 6, 0b11001100);
+  chamaToque(toqueAcerto, toqueAcertoTempo, 6, ledSucesso);
 }
 
 void etapaErro()
 {
-  chamaToque(toqueErro, toqueErroTempo, 1, 0b00110011);
+  chamaToque(toqueErro, toqueErroTempo, 1, ledErro);
 }
+
