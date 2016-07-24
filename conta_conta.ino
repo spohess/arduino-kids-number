@@ -154,7 +154,7 @@ void loop() {
     sendDig595(numeros[numeroAtual]);
     apertou = leContador();
     while ( apertou ) {
-      delay(250);
+      delay(100);
       if (!leContador()) {
         apertou = false;
         pushJogador++;
